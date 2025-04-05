@@ -1,44 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Clipboard to File</title>
+  <title>Clipboard Saver</title>
   <style>
     body {
       font-family: sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
       text-align: center;
-      margin-top: 100px;
     }
     button {
+      margin: 10px;
       padding: 10px 20px;
-      font-size: 18px;
-      cursor: pointer;
+      font-size: 16px;
+    }
+    ul {
+      text-align: left;
+    }
+    li {
+      padding: 5px;
+      border-bottom: 1px solid #ddd;
     }
   </style>
 </head>
 <body>
-  <h1>Copy Clipboard → Lưu thành file</h1>
-  <button onclick="saveClipboardToFile()">Lưu nội dung đã copy</button>
+  <h2>📋 Clipboard Saver</h2>
+  <button onclick="pasteFromClipboard()">Paste từ clipboard</button>
+  <button onclick="exportToFile()">Xuất ra file</button>
+  <ul id="dataList"></ul>
 
   <script>
-    async function saveClipboardToFile() {
+    let dataList = [];
+
+    async function pasteFromClipboard() {
       try {
         const text = await navigator.clipboard.readText();
-        if (!text) {
-          alert("Clipboard trống hoặc không lấy được nội dung.");
-          return;
+        if (text) {
+          dataList.push(text);
+          renderList();
+        } else {
+          alert("Clipboard trống.");
         }
-
-        const blob = new Blob([text], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "clipboard.txt";
-        a.click();
-        URL.revokeObjectURL(url);
       } catch (err) {
-        alert("Trình duyệt không cho phép truy cập clipboard.\n" + err);
+        alert("Trình duyệt không cho phép đọc clipboard: " + err);
       }
+    }
+
+    function renderList() {
+      const ul = document.getElementById("dataList");
+      ul.innerHTML = "";
+      dataList.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.textContent = `${index + 1}. ${item}`;
+        ul.appendChild(li);
+      });
+    }
+
+    function exportToFile() {
+      const content = dataList.join("\n");
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "clipboard_data.txt";
+      a.click();
+      URL.revokeObjectURL(url);
     }
   </script>
 </body>
