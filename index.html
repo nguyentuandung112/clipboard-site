@@ -2,68 +2,165 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Clipboard Saver</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý tài khoản & Ghi chú clipboard</title>
   <style>
     body {
       font-family: sans-serif;
-      max-width: 600px;
-      margin: 50px auto;
-      text-align: center;
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #f4f9ff;
+      border-radius: 10px;
+    }
+    h2 {
+      border-bottom: 2px solid #ccc;
+      padding-bottom: 5px;
+    }
+    textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-family: monospace;
     }
     button {
-      margin: 10px;
-      padding: 10px 20px;
+      margin: 5px 5px 15px 0;
+      padding: 8px 16px;
+      cursor: pointer;
       font-size: 16px;
     }
-    ul {
-      text-align: left;
+    .entry {
+      background: white;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 6px;
+      box-shadow: 0 0 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    li {
-      padding: 5px;
-      border-bottom: 1px solid #ddd;
+    .entry span {
+      font-family: monospace;
     }
   </style>
 </head>
 <body>
-  <h2>📋 Clipboard Saver</h2>
-  <button onclick="pasteFromClipboard()">Paste từ clipboard</button>
-  <button onclick="exportToFile()">Xuất ra file</button>
-  <ul id="dataList"></ul>
+
+  <h2>✍️ Tác vụ 1: Dán nội dung từ clipboard (ghi chú)</h2>
+  <button onclick="pasteNote()">📋 Paste</button>
+  <button onclick="exportNotes()">📄 Xuất .txt</button>
+  <ul id="noteList"></ul>
+
+  <h2>📥 Tác vụ 2: Nhập danh sách tài khoản để Copy</h2>
+  <textarea id="accountInput" rows="6" placeholder="Nhập danh sách tài khoản theo dòng...\nusername pass mail passmail\nhoặc username:pass:mail:passmail"></textarea>
+  <br>
+  <input type="file" id="fileInput" accept=".json">
+  <button onclick="parseAccounts()">📂 Nhập danh sách</button>
+  <button onclick="copyAllAccounts()">📋 Copy tất cả</button>
+  <button onclick="exportAccounts()">📄 Xuất .txt</button>
+  <ul id="accountList"></ul>
 
   <script>
-    let dataList = [];
+    const notes = [];
+    const accounts = [];
 
-    async function pasteFromClipboard() {
-      try {
-        const text = await navigator.clipboard.readText();
-        if (text) {
-          dataList.push(text);
-          renderList();
-        } else {
-          alert("Clipboard trống.");
-        }
-      } catch (err) {
-        alert("Trình duyệt không cho phép đọc clipboard: " + err);
+    async function pasteNote() {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        notes.push(text);
+        renderNotes();
       }
     }
 
-    function renderList() {
-      const ul = document.getElementById("dataList");
+    function renderNotes() {
+      const ul = document.getElementById("noteList");
       ul.innerHTML = "";
-      dataList.forEach((item, index) => {
+      notes.forEach((line, idx) => {
         const li = document.createElement("li");
-        li.textContent = `${index + 1}. ${item}`;
+        li.textContent = `${idx + 1}. ${line}`;
         ul.appendChild(li);
       });
     }
 
-    function exportToFile() {
-      const content = dataList.join("\n");
+    function exportNotes() {
+      const blob = new Blob([notes.join("\n")], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "notes.txt";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function parseAccounts() {
+      const input = document.getElementById("accountInput").value.trim().split("\n");
+      input.forEach(line => {
+        let parts = line.includes(":") ? line.split(":") : line.includes("|") ? line.split("|") : line.split(" ");
+        if (parts.length >= 4) {
+          accounts.push({
+            username: parts[0],
+            password: parts[1],
+            email: parts[2],
+            emailPass: parts[3]
+          });
+        }
+      });
+      renderAccounts();
+    }
+
+    document.getElementById("fileInput").addEventListener("change", function(evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          data.forEach(acc => {
+            if (acc.username && acc.password && acc.email && acc.emailPass) {
+              accounts.push(acc);
+            }
+          });
+          renderAccounts();
+        } catch (err) {
+          alert("File không đúng định dạng JSON!");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    function renderAccounts() {
+      const ul = document.getElementById("accountList");
+      ul.innerHTML = "";
+      accounts.forEach((acc, idx) => {
+        const li = document.createElement("li");
+        li.className = "entry";
+        const span = document.createElement("span");
+        span.textContent = `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}`;
+
+        const btn = document.createElement("button");
+        btn.textContent = "📋 Copy";
+        btn.onclick = () => {
+          navigator.clipboard.writeText(span.textContent).then(() => alert("Đã copy!"));
+        };
+
+        li.appendChild(span);
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+    }
+
+    function copyAllAccounts() {
+      const content = accounts.map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}`).join("\n");
+      navigator.clipboard.writeText(content).then(() => alert("Đã copy tất cả!"));
+    }
+
+    function exportAccounts() {
+      const content = accounts.map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}`).join("\n");
       const blob = new Blob([content], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "clipboard_data.txt";
+      a.download = "accounts.txt";
       a.click();
       URL.revokeObjectURL(url);
     }
