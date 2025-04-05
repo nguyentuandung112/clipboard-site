@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clipboard to File</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 100px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Copy Clipboard → Lưu thành file</h1>
+  <button onclick="saveClipboardToFile()">Lưu nội dung đã copy</button>
+
+  <script>
+    async function saveClipboardToFile() {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!text) {
+          alert("Clipboard trống hoặc không lấy được nội dung.");
+          return;
+        }
+
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "clipboard.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert("Trình duyệt không cho phép truy cập clipboard.\n" + err);
+      }
+    }
+  </script>
+</body>
+</html>
