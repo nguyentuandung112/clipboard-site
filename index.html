@@ -21,8 +21,12 @@ function updateIdAppleForAll() {
   const idApplePass = document.getElementById("inputIdApplePass").value.trim();
   if (!idApple && !idApplePass) return alert("Vui lòng nhập ít nhất một trường!");
 
-  db.ref("config/idApple").set({ idApple, idApplePass });
-  updateDisplayIdApple(idApple, idApplePass);
+  db.ref("config/idApple").set({ idApple, idApplePass }, (error) => {
+    if (!error) {
+      document.getElementById("displayIdApple").textContent = idApple || "-";
+      document.getElementById("displayIdApplePass").textContent = idApplePass || "-";
+    }
+  });
 
   Object.entries(accounts).forEach(([id, acc]) => {
     const updates = {};
@@ -30,9 +34,6 @@ function updateIdAppleForAll() {
     if (idApplePass) updates.idApplePass = idApplePass;
     db.ref(`accounts/${id}`).update(updates);
   });
-
-  document.getElementById("displayIdApple").textContent = idApple || "-";
-  document.getElementById("displayIdApplePass").textContent = idApplePass || "-";
 
   alert("✅ Đã lưu ID Apple cho tất cả tài khoản");
 }
