@@ -192,10 +192,12 @@ function deleteAllAccounts() {
   if (!f) return;
   const r = new FileReader();
   r.onload = e => {
-    const lines = e.target.result.trim().split("\n");
+    const lines = e.target.result.trim().split("
+");
     db.ref("accounts").once("value", snap => {
       const existing = snap.val() || {};
       const existingKeys = new Set(Object.values(existing).map(acc => `${acc.username}|${acc.password}|${acc.email}`));
+      let addedCount = 0;
       lines.forEach(line => {
         const p = parseLine(line);
         const key = `${p[0]}|${p[1]}|${p[2]}`;
@@ -203,17 +205,14 @@ function deleteAllAccounts() {
           db.ref("accounts").push({
             username: p[0], password: p[1], email: p[2], emailPass: p[3], idApple: p[4]||"", idApplePass: p[5]||"", copied: false
           });
+          addedCount++;
         }
       });
-      const addedCount = lines.filter(line => {
-  const p = parseLine(line);
-  const key = `${p[0]}|${p[1]}|${p[2]}`;
-  return p.length >= 4 && !existingKeys.has(key);
-}).length;
-alert(`✅ Đã nhập từ TXT thành công!
+      alert(`✅ Đã nhập từ TXT thành công!
 Tổng số dòng đã thêm: ${addedCount}`);
-renderAccounts();
-updateStats();
+      renderAccounts();
+      updateStats();
+    });
   };
   r.readAsText(f);
 });
