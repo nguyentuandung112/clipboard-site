@@ -21,10 +21,9 @@ function updateIdAppleForAll() {
   const idApplePass = document.getElementById("inputIdApplePass").value.trim();
   if (!idApple && !idApplePass) return alert("Vui lòng nhập ít nhất một trường!");
 
-  // Lưu vào nhánh cấu hình chung
   db.ref("config/idApple").set({ idApple, idApplePass });
+  updateDisplayIdApple(idApple, idApplePass);
 
-  // Cập nhật cho các tài khoản đã có
   Object.entries(accounts).forEach(([id, acc]) => {
     const updates = {};
     if (idApple) updates.idApple = idApple;
@@ -32,7 +31,9 @@ function updateIdAppleForAll() {
     db.ref(`accounts/${id}`).update(updates);
   });
 
-  updateDisplayIdApple(idApple, idApplePass);
+  document.getElementById("displayIdApple").textContent = idApple || "-";
+  document.getElementById("displayIdApplePass").textContent = idApplePass || "-";
+
   alert("✅ Đã lưu ID Apple cho tất cả tài khoản");
 }
 function copyText(id) {
@@ -51,6 +52,15 @@ function fetchGlobalIdApple() {
     document.getElementById("inputIdApplePass").value = data.idApplePass || "";
     updateDisplayIdApple(data.idApple, data.idApplePass);
   });
+}
+function clearIdApple() {
+  if (!confirm("Bạn có chắc chắn muốn xoá ID Apple không?")) return;
+  db.ref("config/idApple").remove();
+  document.getElementById("inputIdApple").value = "";
+  document.getElementById("inputIdApplePass").value = "";
+  document.getElementById("displayIdApple").textContent = "-";
+  document.getElementById("displayIdApplePass").textContent = "-";
+  alert("🗑️ Đã xoá ID Apple");
 }
 </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -95,6 +105,7 @@ function fetchGlobalIdApple() {
   <label>ID Apple: <input type="text" id="inputIdApple" placeholder="Nhập ID Apple"></label>
   <label style="margin-left: 10px;">Mật khẩu ID Apple: <input type="text" id="inputIdApplePass" placeholder="Nhập mật khẩu"></label>
   <button onclick="updateIdAppleForAll()">Lưu ID Apple</button>
+<button onclick="clearIdApple()" style="background:red; color:white;">Xoá ID Apple</button>
 
   <div class="field" style="margin-top: 10px;">
     <span>ID Apple:</span>
