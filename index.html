@@ -83,9 +83,11 @@
         alert(`✅ Đã nhập từ TXT thành công!\nTổng số dòng đã thêm: ${addedCount}`);
         filterCopied = false;
         setTimeout(() => {
-          renderAccounts();
-          updateStats();
-        }, 1000);
+        filterCopied = false;
+setTimeout(() => {
+  renderAccounts();
+  updateStats();
+}, 1000);
       });
     };
     r.readAsText(f);
