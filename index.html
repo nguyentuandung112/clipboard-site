@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản lý tài khoản & Ghi chú clipboard</title>
+  <title>Quản lý tài khoản & Ghi chú clipboard (Firebase realtime)</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
     body {
       font-family: sans-serif;
@@ -17,6 +19,11 @@
       border-bottom: 2px solid #ccc;
       padding-bottom: 5px;
     }
+    .stat {
+      font-weight: bold;
+      color: #003366;
+      margin: 10px 0;
+    }
     textarea {
       width: 100%;
       padding: 10px;
@@ -29,83 +36,116 @@
       cursor: pointer;
       font-size: 16px;
     }
-    .entry {
+    .account-box {
       background: white;
       padding: 10px;
-      margin: 5px 0;
+      margin: 10px 0;
       border-radius: 6px;
       box-shadow: 0 0 3px rgba(0,0,0,0.1);
+    }
+    .field {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 5px 0;
     }
-    .entry span {
+    .field label {
+      font-weight: bold;
+      width: 120px;
+    }
+    .field span {
       font-family: monospace;
+      flex: 1;
+      margin-right: 10px;
     }
   </style>
 </head>
 <body>
-
-  <h2>✍️ Tác vụ 1: Dán nội dung từ clipboard (ghi chú)</h2>
+  <h2>📥 Tác vụ 1: Dán nội dung từ clipboard (ghi chú)</h2>
+  <div class="stat">Số dòng đã dán: <span id="clipboardCount">0</span></div>
   <button onclick="pasteNote()">📋 Paste</button>
   <button onclick="exportNotes()">📄 Xuất .txt</button>
   <ul id="noteList"></ul>
 
   <h2>📥 Tác vụ 2: Nhập danh sách tài khoản để Copy</h2>
+  <div class="stat">
+    Tổng tài khoản: <span id="accountTotal">0</span> — Đã copy: <span id="accountCopied">0</span>
+  </div>
   <textarea id="accountInput" rows="6" placeholder="Nhập danh sách tài khoản theo dòng...\nusername pass mail passmail\nhoặc username:pass:mail:passmail"></textarea>
   <br>
   <input type="file" id="fileInput" accept=".json">
   <button onclick="parseAccounts()">📂 Nhập danh sách</button>
   <button onclick="copyAllAccounts()">📋 Copy tất cả</button>
   <button onclick="exportAccounts()">📄 Xuất .txt</button>
-  <ul id="accountList"></ul>
+  <div id="accountList"></div>
 
   <script>
-    const notes = [];
-    const accounts = [];
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7abH9ttrzdGHEs3UoRKnrNKamO-s8K9Q",
+      authDomain: "hoangcoka123-7bb54.firebaseapp.com",
+      databaseURL: "https://hoangcoka123-7bb54-default-rtdb.firebaseio.com",
+      projectId: "hoangcoka123-7bb54",
+      storageBucket: "hoangcoka123-7bb54.appspot.com",
+      messagingSenderId: "615010120621",
+      appId: "1:615010120621:web:3c55dcbf857d4e826f2724"
+    };
 
-    async function pasteNote() {
-      const text = await navigator.clipboard.readText();
-      if (text) {
-        notes.push(text);
-        renderNotes();
-      }
-    }
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    function renderNotes() {
-      const ul = document.getElementById("noteList");
-      ul.innerHTML = "";
-      notes.forEach((line, idx) => {
-        const li = document.createElement("li");
-        li.textContent = `${idx + 1}. ${line}`;
-        ul.appendChild(li);
+    function pasteNote() {
+      navigator.clipboard.readText().then(text => {
+        if (!text) return;
+        const ref = db.ref("clipboardNotes").push();
+        ref.set(text);
       });
     }
 
     function exportNotes() {
-      const blob = new Blob([notes.join("\n")], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "notes.txt";
-      a.click();
-      URL.revokeObjectURL(url);
+      db.ref("clipboardNotes").once("value", snapshot => {
+        const content = Object.values(snapshot.val() || {}).join("\n");
+        const blob = new Blob([content], { type: "text/plain" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "notes.txt";
+        a.click();
+      });
+    }
+
+    db.ref("clipboardNotes").on("value", snapshot => {
+      const data = snapshot.val() || {};
+      document.getElementById("clipboardCount").textContent = Object.keys(data).length;
+      const ul = document.getElementById("noteList");
+      ul.innerHTML = "";
+      Object.values(data).forEach(line => {
+        const li = document.createElement("li");
+        li.textContent = line;
+        ul.appendChild(li);
+      });
+    });
+
+    const accounts = {};
+
+    function updateStats() {
+      const all = Object.values(accounts);
+      document.getElementById("accountTotal").textContent = all.length;
+      document.getElementById("accountCopied").textContent = all.filter(a => a.copied).length;
     }
 
     function parseAccounts() {
       const input = document.getElementById("accountInput").value.trim().split("\n");
       input.forEach(line => {
-        let parts = line.includes(":") ? line.split(":") : line.includes("|") ? line.split("|") : line.split(" ");
+        const parts = line.includes(":") ? line.split(":") : line.includes("|") ? line.split("|") : line.split(" ");
         if (parts.length >= 4) {
-          accounts.push({
+          db.ref("accounts").push({
             username: parts[0],
             password: parts[1],
             email: parts[2],
-            emailPass: parts[3]
+            emailPass: parts[3],
+            copied: false
           });
         }
       });
-      renderAccounts();
     }
 
     document.getElementById("fileInput").addEventListener("change", function(evt) {
@@ -117,10 +157,9 @@
           const data = JSON.parse(e.target.result);
           data.forEach(acc => {
             if (acc.username && acc.password && acc.email && acc.emailPass) {
-              accounts.push(acc);
+              db.ref("accounts").push({ ...acc, copied: false });
             }
           });
-          renderAccounts();
         } catch (err) {
           alert("File không đúng định dạng JSON!");
         }
@@ -128,34 +167,59 @@
       reader.readAsText(file);
     });
 
-    function renderAccounts() {
-      const ul = document.getElementById("accountList");
-      ul.innerHTML = "";
-      accounts.forEach((acc, idx) => {
-        const li = document.createElement("li");
-        li.className = "entry";
-        const span = document.createElement("span");
-        span.textContent = `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}`;
+    db.ref("accounts").on("value", snapshot => {
+      const data = snapshot.val() || {};
+      Object.assign(accounts, data);
+      updateStats();
+      const container = document.getElementById("accountList");
+      container.innerHTML = "";
 
-        const btn = document.createElement("button");
-        btn.textContent = "📋 Copy";
-        btn.onclick = () => {
-          navigator.clipboard.writeText(span.textContent).then(() => alert("Đã copy!"));
-        };
+      Object.entries(data).forEach(([id, acc]) => {
+        const div = document.createElement("div");
+        div.className = "account-box";
 
-        li.appendChild(span);
-        li.appendChild(btn);
-        ul.appendChild(li);
+        const fields = [
+          { label: "Tên đăng nhập", value: acc.username },
+          { label: "Mật khẩu", value: acc.password },
+          { label: "Email", value: acc.email },
+          { label: "Mật khẩu Email", value: acc.emailPass },
+        ];
+
+        fields.forEach(field => {
+          const row = document.createElement("div");
+          row.className = "field";
+
+          const label = document.createElement("label");
+          label.textContent = field.label + ":";
+
+          const span = document.createElement("span");
+          span.textContent = field.value;
+
+          const copyBtn = document.createElement("button");
+          copyBtn.textContent = "Copy";
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(field.value).then(() => {
+              db.ref(`accounts/${id}/copied`).set(true);
+            });
+          };
+
+          row.appendChild(label);
+          row.appendChild(span);
+          row.appendChild(copyBtn);
+          div.appendChild(row);
+        });
+
+        container.appendChild(div);
       });
-    }
+    });
 
     function copyAllAccounts() {
-      const content = accounts.map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}`).join("\n");
+      const content = Object.values(accounts).map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}`).join("\n");
       navigator.clipboard.writeText(content).then(() => alert("Đã copy tất cả!"));
     }
 
     function exportAccounts() {
-      const content = accounts.map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}`).join("\n");
+      const content = Object.values(accounts).map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}`).join("\n");
       const blob = new Blob([content], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
