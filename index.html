@@ -172,18 +172,29 @@ function clearIdApple() {
       return parts;
     }
     document.getElementById("txtUpload").addEventListener("change", function(e) {
-      const f = e.target.files[0];
-      if (!f) return;
-      const r = new FileReader();
-      r.onload = e => {
-        const lines = e.target.result.trim().split("\n");
-        lines.forEach(line => {
-          const p = parseLine(line);
-          if (p.length >= 4) db.ref("accounts").push({
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    const lines = e.target.result.trim().split("
+");
+    db.ref("accounts").once("value", snap => {
+      const existing = snap.val() || {};
+      const existingKeys = new Set(Object.values(existing).map(acc => `${acc.username}|${acc.password}|${acc.email}`));
+      lines.forEach(line => {
+        const p = parseLine(line);
+        const key = `${p[0]}|${p[1]}|${p[2]}`;
+        if (p.length >= 4 && !existingKeys.has(key)) {
+          db.ref("accounts").push({
             username: p[0], password: p[1], email: p[2], emailPass: p[3], idApple: p[4]||"", idApplePass: p[5]||"", copied: false
           });
-        });
-        alert("✅ Đã nhập từ TXT thành công!");
+        }
+      });
+      alert("✅ Đã nhập từ TXT thành công!");
+    });
+  };
+  r.readAsText(f);
+});
       };
       r.readAsText(f);
     });
