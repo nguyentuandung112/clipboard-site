@@ -65,14 +65,16 @@ function clearIdApple() {
 }
 function deleteAllAccounts() {
   if (confirm("Bạn có chắc chắn muốn xoá toàn bộ dữ liệu tài khoản?")) {
-        db.ref("accounts").remove().then(() => {
+    db.ref("accounts").remove().then(() => {
       Object.keys(accounts).forEach(k => delete accounts[k]);
       updateStats();
       document.getElementById("accountList").innerHTML = "";
       alert("🗑️ Đã xoá toàn bộ dữ liệu tài khoản");
+    }).catch((err) => {
+      alert("❌ Lỗi khi xoá dữ liệu: " + err.message);
     });
-    }
   }
+}
 </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
