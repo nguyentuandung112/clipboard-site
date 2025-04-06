@@ -183,7 +183,8 @@ function deleteAllAccounts() {
   if (!f) return;
   const r = new FileReader();
   r.onload = e => {
-    const lines = e.target.result.trim().split("\n");
+    const lines = e.target.result.trim().split("
+");
     db.ref("accounts").once("value", snap => {
       const existing = snap.val() || {};
       const existingKeys = new Set(Object.values(existing).map(acc => `${acc.username}|${acc.password}|${acc.email}`));
@@ -248,35 +249,7 @@ function deleteAllAccounts() {
 
   list.appendChild(box);
   updateStats();
-      let latest;
-
-      Object.entries(accounts).forEach(([id, acc]) => {
-        if (filterCopied !== null && acc.copied !== filterCopied) return;
-        const box = document.createElement("div");
-        box.className = "account-box";
-        [
-          { label: "Tên đăng nhập", value: acc.username },
-          { label: "Mật khẩu", value: acc.password },
-          { label: "Email", value: acc.email },
-          { label: "Mật khẩu Email", value: acc.emailPass },
-          { label: "ID Apple", value: acc.idApple },
-          { label: "Mật khẩu ID Apple", value: acc.idApplePass }
-        ].forEach(field => {
-          const row = document.createElement("div");
-          row.className = "field";
-          const label = document.createElement("span");
-          label.textContent = field.label;
-          const valueSpan = document.createElement("span");
-          valueSpan.textContent = field.value;
-          const btn = document.createElement("button");
-          btn.textContent = "Copy";
-          btn.onclick = () => {
-  navigator.clipboard.writeText(field.value);
-  db.ref(`accounts/${id}/copied`).set(true);
-};
-          row.append(label, valueSpan, btn);
-          box.appendChild(row);
-        });
+      
         
         latest = acc;
       });
