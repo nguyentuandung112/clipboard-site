@@ -192,8 +192,7 @@ function deleteAllAccounts() {
   if (!f) return;
   const r = new FileReader();
   r.onload = e => {
-    const lines = e.target.result.trim().split("
-");
+    const lines = e.target.result.trim().split("\n");
     db.ref("accounts").once("value", snap => {
       const existing = snap.val() || {};
       const existingKeys = new Set(Object.values(existing).map(acc => `${acc.username}|${acc.password}|${acc.email}`));
