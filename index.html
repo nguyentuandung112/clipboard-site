@@ -26,7 +26,16 @@ function updateIdAppleForAll() {
     if (idApplePass) updates.idApplePass = idApplePass;
     db.ref(`accounts/${id}`).update(updates);
   });
+  updateDisplayIdApple(idApple, idApplePass);
   alert("✅ Đã lưu ID Apple cho tất cả tài khoản");
+}
+function copyText(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text);
+}
+function updateDisplayIdApple(id, pass) {
+  document.getElementById("displayIdApple").textContent = id || "-";
+  document.getElementById("displayIdApplePass").textContent = pass || "-";
 }
 </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -68,10 +77,21 @@ function updateIdAppleForAll() {
     <div class="field"><span>Mật khẩu Email</span><span id="lastEmailPass">-</span><button onclick="copyLast('lastEmailPass')">Copy</button></div>
   </div>
   <div style="margin-top: 20px;">
-    <label>ID Apple: <input type="text" id="inputIdApple" placeholder="Nhập ID Apple"></label>
-    <label style="margin-left: 10px;">Mật khẩu ID Apple: <input type="text" id="inputIdApplePass" placeholder="Nhập mật khẩu"></label>
-    <button onclick="updateIdAppleForAll()">Lưu cho tất cả</button>
+  <label>ID Apple: <input type="text" id="inputIdApple" placeholder="Nhập ID Apple"></label>
+  <label style="margin-left: 10px;">Mật khẩu ID Apple: <input type="text" id="inputIdApplePass" placeholder="Nhập mật khẩu"></label>
+  <button onclick="updateIdAppleForAll()">Lưu cho tất cả</button>
+
+  <div class="field" style="margin-top: 10px;">
+    <span>ID Apple:</span>
+    <span id="displayIdApple">-</span>
+    <button onclick="copyText('displayIdApple')">Copy</button>
   </div>
+  <div class="field">
+    <span>Mật khẩu ID Apple:</span>
+    <span id="displayIdApplePass">-</span>
+    <button onclick="copyText('displayIdApplePass')">Copy</button>
+  </div>
+</div>
   <div id="accountList"></div>
 
   <script>
