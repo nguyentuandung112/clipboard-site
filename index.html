@@ -130,8 +130,7 @@ function updateStats() {
   function pasteFromClipboard() {
     document.getElementById("clipboardResult").innerText = "";
     navigator.clipboard.readText().then(text => {
-      const lines = text.trim().split("
-");
+      const lines = text.trim().split("\n");
       document.getElementById("pasteArea").value = text;
       db.ref("accounts").once("value", snap => {
         const existing = snap.val() || {};
