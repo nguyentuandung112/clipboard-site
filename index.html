@@ -2,6 +2,10 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý tài khoản & Clipboard (Realtime)</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -66,10 +70,6 @@
       font-weight: bold;
     }
   </style>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản lý tài khoản & Clipboard (Realtime)</title>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <h1>Quản lý Tài khoản</h1>
@@ -129,27 +129,41 @@
     <strong>📊 Thống kê:</strong>
     <span id="usedCount">Đã dùng: 0</span> | <span id="unusedCount">Chưa dùng: 0</span>
   </div>
-<script>
-  function deleteAllAccounts() {
-    if (confirm("Bạn có chắc chắn muốn xoá toàn bộ dữ liệu tài khoản?")) {
-      db.ref("accounts").remove().then(() => {
-        accounts = {};
-        document.getElementById("accountList").innerHTML = "";
-        document.getElementById("lastUsername").textContent = "-";
-        document.getElementById("lastPassword").textContent = "-";
-        document.getElementById("lastEmail").textContent = "-";
-        document.getElementById("lastEmailPass").textContent = "-";
-        document.getElementById("usedCount").textContent = "Đã dùng: 0";
-        document.getElementById("unusedCount").textContent = "Chưa dùng: 0";
-        document.getElementById("accountTotal").textContent = "0";
-        document.getElementById("accountCopied").textContent = "0";
-        updateStats();
-        alert("🗑️ Đã xoá toàn bộ dữ liệu tài khoản");
-      }).catch((err) => {
-        alert("❌ Lỗi khi xoá dữ liệu: " + err.message);
-      });
+
+  <!-- Firebase config & script -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7abH9ttrzdGHEs3UoRKnrNKamO-s8K9Q",
+      authDomain: "hoangcoka123-7bb54.firebaseapp.com",
+      databaseURL: "https://hoangcoka123-7bb54-default-rtdb.firebaseio.com",
+      projectId: "hoangcoka123-7bb54",
+      storageBucket: "hoangcoka123-7bb54.appspot.com",
+      messagingSenderId: "615010120621",
+      appId: "1:615010120621:web:3c55dcbf857d4e826f2724"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let accounts = {};
+
+    function deleteAllAccounts() {
+      if (confirm("Bạn có chắc chắn muốn xoá toàn bộ dữ liệu tài khoản?")) {
+        db.ref("accounts").remove().then(() => {
+          accounts = {};
+          document.getElementById("accountList").innerHTML = "";
+          document.getElementById("lastUsername").textContent = "-";
+          document.getElementById("lastPassword").textContent = "-";
+          document.getElementById("lastEmail").textContent = "-";
+          document.getElementById("lastEmailPass").textContent = "-";
+          document.getElementById("usedCount").textContent = "Đã dùng: 0";
+          document.getElementById("unusedCount").textContent = "Chưa dùng: 0";
+          document.getElementById("accountTotal").textContent = "0";
+          document.getElementById("accountCopied").textContent = "0";
+          alert("🗑️ Đã xoá toàn bộ dữ liệu tài khoản");
+        }).catch((err) => {
+          alert("❌ Lỗi khi xoá dữ liệu: " + err.message);
+        });
+      }
     }
-  }
-</script>
+  </script>
 </body>
 </html>
