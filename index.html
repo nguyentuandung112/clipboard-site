@@ -63,6 +63,12 @@ function clearIdApple() {
   document.getElementById("displayIdApplePass").textContent = "-";
   alert("🗑️ Đã xoá ID Apple");
 }
+function deleteAllAccounts() {
+  if (confirm("Bạn có chắc chắn muốn xoá toàn bộ dữ liệu tài khoản?")) {
+    db.ref("accounts").remove();
+    alert("🗑️ Đã xoá toàn bộ dữ liệu tài khoản");
+  }
+}
 </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
@@ -94,6 +100,7 @@ function clearIdApple() {
     <button onclick="filterAccounts(true)">Hiện tài khoản đã dùng</button>
   </div>
   <input type="file" id="txtUpload" accept=".txt">
+<button onclick="deleteAllAccounts()" style="background:red; color:white">🗑️ Xoá toàn bộ dữ liệu</button>
   <button onclick="exportAccounts()">📄 Xuất .txt</button>
   <div class="stat">Dữ liệu đang hiển thị:</div>
   <div class="account-box">
@@ -280,14 +287,16 @@ function clearIdApple() {
       renderAccounts();
     }
     function exportAccounts() {
-      const c = Object.values(accounts).map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}:${acc.idApple}:${acc.idApplePass}`).join("\n");
-      const blob = new Blob([c], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "accounts.txt";
-      a.click();
-      URL.revokeObjectURL(url);
+  const filtered = Object.values(accounts).filter(acc => filterCopied === null || acc.copied === filterCopied);
+  const content = filtered.map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}:${acc.idApple}:${acc.idApplePass}`).join("
+");
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filterCopied ? "used-accounts.txt" : "unused-accounts.txt";
+  a.click();
+  URL.revokeObjectURL(url);
     }
   </script>
 </body>
