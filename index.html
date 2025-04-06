@@ -4,7 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý tài khoản & Clipboard (Realtime)</title>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">function copyLast(id) {
+  const value = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(value);
+}
+function updateLastDisplay() {
+  const last = Object.values(accounts).filter(a => !a.copied).at(0);
+  if (!last) return;
+  document.getElementById("lastUsername").textContent = last.username;
+  document.getElementById("lastPassword").textContent = last.password;
+  document.getElementById("lastEmail").textContent = last.email;
+  document.getElementById("lastEmailPass").textContent = last.emailPass;
+}
+</script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
     body { font-family: sans-serif; max-width: 800px; margin: 30px auto; background: #f4f9ff; padding: 20px; border-radius: 12px; }
@@ -36,6 +48,13 @@
   </div>
   <input type="file" id="txtUpload" accept=".txt">
   <button onclick="exportAccounts()">📄 Xuất .txt</button>
+  <div class="stat">Dữ liệu đang hiển thị:</div>
+  <div class="account-box">
+    <div class="field"><span>Tên đăng nhập</span><span id="lastUsername">-</span><button onclick="copyLast('lastUsername')">Copy</button></div>
+    <div class="field"><span>Mật khẩu</span><span id="lastPassword">-</span><button onclick="copyLast('lastPassword')">Copy</button></div>
+    <div class="field"><span>Email</span><span id="lastEmail">-</span><button onclick="copyLast('lastEmail')">Copy</button></div>
+    <div class="field"><span>Mật khẩu Email</span><span id="lastEmailPass">-</span><button onclick="copyLast('lastEmailPass')">Copy</button></div>
+  </div>
   <div id="accountList"></div>
 
   <script>
@@ -108,11 +127,13 @@
       const data = snap.val() || {};
       Object.keys(accounts).forEach(k => delete accounts[k]);
       Object.assign(accounts, data);
-      updateStats(); renderAccounts();
+      updateStats(); renderAccounts(); updateLastDisplay();
     });
     function renderAccounts() {
       const list = document.getElementById("accountList");
       list.innerHTML = "";
+      let latest;
+
       Object.entries(accounts).forEach(([id, acc]) => {
         if (filterCopied !== null && acc.copied !== filterCopied) return;
         const box = document.createElement("div");
@@ -146,6 +167,7 @@
         delBtn.onclick = () => db.ref(`accounts/${id}`).remove();
         box.appendChild(delBtn);
         list.appendChild(box);
+        latest = acc;
       });
     }
     function filterAccounts(val) {
