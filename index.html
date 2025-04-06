@@ -20,12 +20,18 @@ function updateIdAppleForAll() {
   const idApple = document.getElementById("inputIdApple").value.trim();
   const idApplePass = document.getElementById("inputIdApplePass").value.trim();
   if (!idApple && !idApplePass) return alert("Vui lòng nhập ít nhất một trường!");
+
+  // Lưu vào nhánh cấu hình chung
+  db.ref("config/idApple").set({ idApple, idApplePass });
+
+  // Cập nhật cho các tài khoản đã có
   Object.entries(accounts).forEach(([id, acc]) => {
     const updates = {};
     if (idApple) updates.idApple = idApple;
     if (idApplePass) updates.idApplePass = idApplePass;
     db.ref(`accounts/${id}`).update(updates);
   });
+
   updateDisplayIdApple(idApple, idApplePass);
   alert("✅ Đã lưu ID Apple cho tất cả tài khoản");
 }
@@ -36,6 +42,15 @@ function copyText(id) {
 function updateDisplayIdApple(id, pass) {
   document.getElementById("displayIdApple").textContent = id || "-";
   document.getElementById("displayIdApplePass").textContent = pass || "-";
+}
+function fetchGlobalIdApple() {
+  db.ref("config/idApple").on("value", snap => {
+    const data = snap.val();
+    if (!data) return;
+    document.getElementById("inputIdApple").value = data.idApple || "";
+    document.getElementById("inputIdApplePass").value = data.idApplePass || "";
+    updateDisplayIdApple(data.idApple, data.idApplePass);
+  });
 }
 </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -164,7 +179,7 @@ function updateDisplayIdApple(id, pass) {
       const data = snap.val() || {};
       Object.keys(accounts).forEach(k => delete accounts[k]);
       Object.assign(accounts, data);
-      updateStats(); renderAccounts(); updateLastDisplay();
+      updateStats(); renderAccounts(); updateLastDisplay(); fetchGlobalIdApple();
     });
     function renderAccounts() {
       const list = document.getElementById("accountList");
