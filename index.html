@@ -205,13 +205,15 @@ function deleteAllAccounts() {
           });
         }
       });
-      alert(`✅ Đã nhập từ TXT thành công!
-Tổng số dòng đã thêm: ${lines.filter(line => {
+      const addedCount = lines.filter(line => {
   const p = parseLine(line);
   const key = `${p[0]}|${p[1]}|${p[2]}`;
   return p.length >= 4 && !existingKeys.has(key);
-}).length}`);
-    });
+}).length;
+alert(`✅ Đã nhập từ TXT thành công!
+Tổng số dòng đã thêm: ${addedCount}`);
+renderAccounts();
+updateStats();
   };
   r.readAsText(f);
 });
