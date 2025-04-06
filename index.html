@@ -37,26 +37,52 @@
       font-size: 16px;
     }
     .account-box {
-      background: white;
+      background: #007bff;
+      color: white;
       padding: 10px;
       margin: 10px 0;
-      border-radius: 6px;
-      box-shadow: 0 0 3px rgba(0,0,0,0.1);
+      border-radius: 8px;
     }
     .field {
+      background: #f1f1f1;
+      padding: 8px;
+      margin: 6px 0;
+      border-radius: 6px;
+      color: black;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 5px 0;
-    }
-    .field label {
-      font-weight: bold;
-      width: 120px;
     }
     .field span {
       font-family: monospace;
-      flex: 1;
       margin-right: 10px;
+    }
+    .controls {
+      text-align: center;
+      margin-top: 15px;
+      margin-bottom: 25px;
+    }
+    .controls button {
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    .delete-btn {
+      background: red;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 15px auto;
+      display: block;
+    }
+    .stats-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -68,10 +94,16 @@
   <ul id="noteList"></ul>
 
   <h2>📥 Tác vụ 2: Nhập danh sách tài khoản để Copy</h2>
-  <div class="stat">
-    Tổng tài khoản: <span id="accountTotal">0</span> — Đã copy: <span id="accountCopied">0</span>
+  <div class="stat stats-bar">
+    <span>Tổng số tài khoản chưa sử dụng: <span id="accountTotal">0</span></span>
+    <span>Tổng số tài khoản đã sử dụng: <span id="accountCopied">0</span></span>
   </div>
-  <textarea id="accountInput" rows="6" placeholder="Nhập danh sách tài khoản theo dòng...\nusername pass mail passmail\nhoặc username:pass:mail:passmail"></textarea>
+  <div class="controls">
+    <button onclick="filterAccounts(false)">Tài khoản chưa sử dụng</button>
+    <button onclick="filterAccounts(true)">Tài khoản đã sử dụng</button>
+  </div>
+
+  <textarea id="accountInput" rows="6" placeholder="username pass mail passmail idApple idApplePass\nhoặc username:pass:mail:passmail:idApple:idApplePass"></textarea>
   <br>
   <input type="file" id="fileInput" accept=".json">
   <button onclick="parseAccounts()">📂 Nhập danh sách</button>
@@ -92,12 +124,13 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const accounts = {};
+    let filterCopied = null;
 
     function pasteNote() {
       navigator.clipboard.readText().then(text => {
         if (!text) return;
-        const ref = db.ref("clipboardNotes").push();
-        ref.set(text);
+        db.ref("clipboardNotes").push(text);
       });
     }
 
@@ -124,12 +157,12 @@
       });
     });
 
-    const accounts = {};
-
     function updateStats() {
       const all = Object.values(accounts);
-      document.getElementById("accountTotal").textContent = all.length;
-      document.getElementById("accountCopied").textContent = all.filter(a => a.copied).length;
+      const total = all.filter(a => !a.copied).length;
+      const used = all.filter(a => a.copied).length;
+      document.getElementById("accountTotal").textContent = total;
+      document.getElementById("accountCopied").textContent = used;
     }
 
     function parseAccounts() {
@@ -142,6 +175,8 @@
             password: parts[1],
             email: parts[2],
             emailPass: parts[3],
+            idApple: parts[4] || "",
+            idApplePass: parts[5] || "",
             copied: false
           });
         }
@@ -157,7 +192,12 @@
           const data = JSON.parse(e.target.result);
           data.forEach(acc => {
             if (acc.username && acc.password && acc.email && acc.emailPass) {
-              db.ref("accounts").push({ ...acc, copied: false });
+              db.ref("accounts").push({
+                ...acc,
+                idApple: acc.idApple || "",
+                idApplePass: acc.idApplePass || "",
+                copied: false
+              });
             }
           });
         } catch (err) {
@@ -169,28 +209,30 @@
 
     db.ref("accounts").on("value", snapshot => {
       const data = snapshot.val() || {};
+      Object.keys(accounts).forEach(k => delete accounts[k]);
       Object.assign(accounts, data);
       updateStats();
+      renderAccounts();
+    });
+
+    function renderAccounts() {
       const container = document.getElementById("accountList");
       container.innerHTML = "";
+      Object.entries(accounts).forEach(([id, acc]) => {
+        if (filterCopied !== null && acc.copied !== filterCopied) return;
+        const box = document.createElement("div");
+        box.className = "account-box";
 
-      Object.entries(data).forEach(([id, acc]) => {
-        const div = document.createElement("div");
-        div.className = "account-box";
-
-        const fields = [
+        [
           { label: "Tên đăng nhập", value: acc.username },
           { label: "Mật khẩu", value: acc.password },
           { label: "Email", value: acc.email },
           { label: "Mật khẩu Email", value: acc.emailPass },
-        ];
-
-        fields.forEach(field => {
+          { label: "ID Apple", value: acc.idApple },
+          { label: "Mật khẩu ID Apple", value: acc.idApplePass },
+        ].forEach(field => {
           const row = document.createElement("div");
           row.className = "field";
-
-          const label = document.createElement("label");
-          label.textContent = field.label + ":";
 
           const span = document.createElement("span");
           span.textContent = field.value;
@@ -203,23 +245,40 @@
             });
           };
 
-          row.appendChild(label);
+          row.innerHTML = `<strong>${field.label}:</strong> `;
           row.appendChild(span);
           row.appendChild(copyBtn);
-          div.appendChild(row);
+          box.appendChild(row);
         });
 
-        container.appendChild(div);
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "Xóa tài khoản";
+        deleteBtn.onclick = () => {
+          db.ref(`accounts/${id}`).remove();
+        };
+        box.appendChild(deleteBtn);
+
+        container.appendChild(box);
       });
-    });
+    }
+
+    function filterAccounts(val) {
+      filterCopied = val;
+      renderAccounts();
+    }
 
     function copyAllAccounts() {
-      const content = Object.values(accounts).map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}`).join("\n");
+      const content = Object.values(accounts)
+        .map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}:${acc.idApple}:${acc.idApplePass}`)
+        .join("\n");
       navigator.clipboard.writeText(content).then(() => alert("Đã copy tất cả!"));
     }
 
     function exportAccounts() {
-      const content = Object.values(accounts).map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}`).join("\n");
+      const content = Object.values(accounts)
+        .map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}:${acc.idApple}:${acc.idApplePass}`)
+        .join("\n");
       const blob = new Blob([content], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
