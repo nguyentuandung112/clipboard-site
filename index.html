@@ -202,8 +202,6 @@ function deleteAllAccounts() {
   r.readAsText(f);
 });
       };
-      r.readAsText(f);
-    });
     db.ref("accounts").on("value", snap => {
       const data = snap.val() || {};
       Object.keys(accounts).forEach(k => delete accounts[k]);
@@ -250,8 +248,6 @@ function deleteAllAccounts() {
   updateStats();
       
         
-        latest = acc;
-      });
     }
     function filterAccounts(val) {
       filterCopied = val;
@@ -259,8 +255,7 @@ function deleteAllAccounts() {
     }
     function exportAccounts() {
   const filtered = Object.values(accounts).filter(acc => filterCopied === null || acc.copied === filterCopied);
-  const content = filtered.map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}:${acc.idApple}:${acc.idApplePass}`).join("
-");
+  const content = filtered.map(acc => `${acc.username}:${acc.password}:${acc.email}:${acc.emailPass}:${acc.idApple}:${acc.idApplePass}`).join("\n");
   const blob = new Blob([content], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
