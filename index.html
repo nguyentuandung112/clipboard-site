@@ -94,7 +94,7 @@ function fetchGlobalIdApple() {
   <div style="margin-top: 20px;">
   <label>ID Apple: <input type="text" id="inputIdApple" placeholder="Nhập ID Apple"></label>
   <label style="margin-left: 10px;">Mật khẩu ID Apple: <input type="text" id="inputIdApplePass" placeholder="Nhập mật khẩu"></label>
-  <button onclick="updateIdAppleForAll()">Lưu cho tất cả</button>
+  <button onclick="updateIdAppleForAll()">Lưu ID Apple</button>
 
   <div class="field" style="margin-top: 10px;">
     <span>ID Apple:</span>
@@ -182,8 +182,43 @@ function fetchGlobalIdApple() {
       updateStats(); renderAccounts(); updateLastDisplay(); fetchGlobalIdApple();
     });
     function renderAccounts() {
-      const list = document.getElementById("accountList");
-      list.innerHTML = "";
+  const list = document.getElementById("accountList");
+  list.innerHTML = "";
+
+  const unused = Object.entries(accounts).filter(([id, acc]) => !acc.copied);
+  if (unused.length === 0) {
+    list.innerHTML = '<div class="stat">Không còn tài khoản chưa sử dụng</div>';
+    return;
+  }
+
+  const [id, acc] = unused[Math.floor(Math.random() * unused.length)];
+  db.ref(`accounts/${id}/copied`).set(true);
+
+  const box = document.createElement("div");
+  box.className = "account-box";
+
+  [
+    { label: "Tên đăng nhập", value: acc.username, id: "lastUsername" },
+    { label: "Mật khẩu", value: acc.password, id: "lastPassword" },
+    { label: "Email", value: acc.email, id: "lastEmail" },
+    { label: "Mật khẩu Email", value: acc.emailPass, id: "lastEmailPass" }
+  ].forEach(field => {
+    const row = document.createElement("div");
+    row.className = "field";
+    const label = document.createElement("span");
+    label.textContent = field.label;
+    const valueSpan = document.createElement("span");
+    valueSpan.textContent = field.value;
+    valueSpan.id = field.id;
+    const btn = document.createElement("button");
+    btn.textContent = "Copy";
+    btn.onclick = () => navigator.clipboard.writeText(field.value);
+    row.append(label, valueSpan, btn);
+    box.appendChild(row);
+  });
+
+  list.appendChild(box);
+  updateStats();
       let latest;
 
       Object.entries(accounts).forEach(([id, acc]) => {
@@ -213,12 +248,7 @@ function fetchGlobalIdApple() {
           row.append(label, valueSpan, btn);
           box.appendChild(row);
         });
-        const delBtn = document.createElement("button");
-        delBtn.className = "delete-btn";
-        delBtn.textContent = "Xoá tài khoản";
-        delBtn.onclick = () => db.ref(`accounts/${id}`).remove();
-        box.appendChild(delBtn);
-        list.appendChild(box);
+        
         latest = acc;
       });
     }
