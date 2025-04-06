@@ -204,7 +204,7 @@ function clearIdApple() {
   }
 
   const [id, acc] = unused[Math.floor(Math.random() * unused.length)];
-  db.ref(`accounts/${id}/copied`).set(true);
+  // db.ref(`accounts/${id}/copied`).set(true);
 
   const box = document.createElement("div");
   box.className = "account-box";
@@ -254,9 +254,9 @@ function clearIdApple() {
           const btn = document.createElement("button");
           btn.textContent = "Copy";
           btn.onclick = () => {
-            navigator.clipboard.writeText(field.value);
-            db.ref(`accounts/${id}/copied`).set(true);
-          };
+  navigator.clipboard.writeText(field.value);
+  db.ref(`accounts/${id}/copied`).set(true);
+};
           row.append(label, valueSpan, btn);
           box.appendChild(row);
         });
