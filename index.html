@@ -209,6 +209,7 @@ function deleteAllAccounts() {
       });
       alert(`✅ Đã nhập từ TXT thành công!
 Tổng số dòng đã thêm: ${addedCount}`);
+      filterCopied = false;
       renderAccounts();
       updateStats();
     });
