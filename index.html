@@ -83,11 +83,9 @@
         alert(`✅ Đã nhập từ TXT thành công!\nTổng số dòng đã thêm: ${addedCount}`);
         filterCopied = false;
         setTimeout(() => {
-        filterCopied = false;
-setTimeout(() => {
-  renderAccounts();
-  updateStats();
-}, 1000);
+          renderAccounts();
+          updateStats();
+        }, 1000);
       });
     };
     r.readAsText(f);
@@ -149,12 +147,29 @@ function updateStats() {
         document.getElementById("clipboardResult").innerText = `✅ Đã dán từ Clipboard thành công!
 Tổng số dòng đã thêm: ${addedCount}`;
         filterCopied = false;
+        setTimeout(() => {
           renderAccounts();
           updateStats();
         }, 1000);
       });
     });
   }
+  </script>
+<!-- Hiển thị thống kê ngay trên trang -->
+  <div style="margin-top:20px">
+    <strong>📊 Thống kê:</strong>
+    <span id="usedCount">Đã dùng: 0</span> | <span id="unusedCount">Chưa dùng: 0</span>
+  </div>
+
+  <script>
+    function updateStats() {
+      const all = Object.values(accounts);
+      const used = all.filter(a => a.copied).length;
+      const unused = all.length - used;
+      document.getElementById("usedCount").textContent = `Đã dùng: ${used}`;
+      document.getElementById("unusedCount").textContent = `Chưa dùng: ${unused}`;
+      console.log(`📊 Đã dùng: ${used}, Chưa dùng: ${unused}`);
+    }
   </script>
 </body>
 </html>
