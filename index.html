@@ -2,6 +2,70 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3 {
+      color: #0066cc;
+    }
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px 5px 10px 0;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    input[type="text"] {
+      padding: 6px;
+      margin: 4px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .field {
+      margin: 8px 0;
+      background: #eef2f7;
+      padding: 10px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .account-box, .controls, .stats-bar, #accountDisplay {
+      margin-top: 20px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.05);
+    }
+    .controls button {
+      background: #28a745;
+    }
+    .controls button:hover {
+      background: #1e7e34;
+    }
+    .stat, .stats-bar span {
+      font-weight: bold;
+    }
+  </style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý tài khoản & Clipboard (Realtime)</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -11,165 +75,81 @@
   <h1>Quản lý Tài khoản</h1>
 
   <!-- Tác vụ 1: Dán clipboard -->
-  <textarea id="pasteArea" rows="6" cols="60" placeholder="Dán nội dung tài khoản ở đây..."></textarea>
-  <br>
-  <button onclick="exportClipboardContent()">📤 Xuất TXT từ nội dung đã dán</button>
-  <div id="clipboardResult" style="margin-top:10px;"></div>
-  <button onclick="pasteFromClipboard()">📋 Dán từ Clipboard</button>
+  <h2>Tác vụ 1: Dán nội dung từ clipboard</h2>
+  <div class="stat">Số dòng đã dán: <span id="clipboardCount">0</span></div>
+  <button onclick="pasteNote()">📋 Dán</button>
+  <button onclick="exportNotes()">📄 Xuất .txt</button>
+  <ul id="noteList"></ul>
 
-  <!-- Upload TXT -->
-  <input type="file" id="txtUpload">
+  <!-- Tác vụ 2: Quản lý tài khoản -->
+  <h2>Tác vụ 2: Quản lý tài khoản</h2>
+  <div class="stats-bar">
+    <span>Chưa dùng: <span id="accountTotal">0</span></span>
+    <span>Đã dùng: <span id="accountCopied">0</span></span>
+  </div>
+  <div class="controls">
+    <button onclick="filterAccounts(false)">Hiện tài khoản chưa dùng</button>
+    <button onclick="filterAccounts(true)">Hiện tài khoản đã dùng</button>
+  </div>
+  <input type="file" id="txtUpload" accept=".txt">
+  <button onclick="deleteAllAccounts()" style="background:red; color:white">🗑️ Xoá toàn bộ dữ liệu</button>
+  <button onclick="exportAccounts()">📄 Xuất .txt</button>
 
-  <!-- Hiển thị tài khoản ngẫu nhiên -->
-  <div id="accountDisplay">
-    <div>Tên đăng nhập: <span id="lastUsername"></span> <button onclick="copyLast('lastUsername')">Copy</button></div>
-    <div>Mật khẩu: <span id="lastPassword"></span> <button onclick="copyLast('lastPassword')">Copy</button></div>
-    <div>Email: <span id="lastEmail"></span> <button onclick="copyLast('lastEmail')">Copy</button></div>
-    <div>Mật khẩu Email: <span id="lastEmailPass"></span> <button onclick="copyLast('lastEmailPass')">Copy</button></div>
+  <div class="stat">Dữ liệu đang hiển thị:</div>
+  <div class="account-box">
+    <div class="field"><span>Tên đăng nhập</span><span id="lastUsername">-</span><button onclick="copyLast('lastUsername')">Copy</button></div>
+    <div class="field"><span>Mật khẩu</span><span id="lastPassword">-</span><button onclick="copyLast('lastPassword')">Copy</button></div>
+    <div class="field"><span>Email</span><span id="lastEmail">-</span><button onclick="copyLast('lastEmail')">Copy</button></div>
+    <div class="field"><span>Mật khẩu Email</span><span id="lastEmailPass">-</span><button onclick="copyLast('lastEmailPass')">Copy</button></div>
   </div>
 
-  <!-- Thông tin ID Apple -->
-  <h3>ID Apple dùng chung</h3>
-  <input id="inputIdApple" placeholder="ID Apple">
-  <input id="inputIdApplePass" placeholder="Mật khẩu ID Apple">
-  <button onclick="updateIdAppleForAll()">Lưu ID Apple</button>
-  <button onclick="clearIdApple()">Xoá ID Apple</button>
-  <div>ID Apple: <span id="displayIdApple">-</span> <button onclick="copyText('displayIdApple')">Copy</button></div>
-  <div>Mật khẩu ID Apple: <span id="displayIdApplePass">-</span> <button onclick="copyText('displayIdApplePass')">Copy</button></div>
+  <!-- ID Apple quản lý -->
+  <div style="margin-top: 20px;">
+    <label>ID Apple: <input type="text" id="inputIdApple" placeholder="Nhập ID Apple"></label>
+    <label style="margin-left: 10px;">Mật khẩu ID Apple: <input type="text" id="inputIdApplePass" placeholder="Nhập mật khẩu"></label>
+    <button onclick="updateIdAppleForAll()">Lưu ID Apple</button>
+    <button onclick="clearIdApple()" style="background:red; color:white;">Xoá ID Apple</button>
 
-  <!-- Xoá toàn bộ -->
-  <button onclick="deleteAllAccounts()">🗑️ Xoá toàn bộ dữ liệu</button>
+    <div class="field" style="margin-top: 10px;">
+      <span>ID Apple:</span>
+      <span id="displayIdApple">-</span>
+      <button onclick="copyText('displayIdApple')">Copy</button>
+    </div>
+    <div class="field">
+      <span>Mật khẩu ID Apple:</span>
+      <span id="displayIdApplePass">-</span>
+      <button onclick="copyText('displayIdApplePass')">Copy</button>
+    </div>
+  </div>
 
-  <!-- Firebase Config + Script -->
-  <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyA7abH9ttrzdGHEs3UoRKnrNKamO-s8K9Q",
-    authDomain: "hoangcoka123-7bb54.firebaseapp.com",
-    projectId: "hoangcoka123-7bb54",
-    storageBucket: "hoangcoka123-7bb54.appspot.com",
-    messagingSenderId: "615010120621",
-    appId: "1:615010120621:web:3c55dcbf857d4e826f2724"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+  <div id="accountList"></div>
 
-  let accounts = {};
-  let filterCopied = false;
-
-  function parseLine(line) {
-    return line.includes(':') ? line.split(':') : line.includes('|') ? line.split('|') : line.trim().split(/\s+/);
-  }
-
-  document.getElementById("txtUpload").addEventListener("change", function(e) {
-    const f = e.target.files[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = e => {
-      const lines = e.target.result.trim().split("\n");
-      db.ref("accounts").once("value", snap => {
-        const existing = snap.val() || {};
-        const existingKeys = new Set(Object.values(existing).map(acc => `${acc.username}|${acc.password}|${acc.email}`));
-        let addedCount = 0;
-        lines.forEach(line => {
-          const p = parseLine(line);
-          const key = `${p[0]}|${p[1]}|${p[2]}`;
-          if (p.length >= 4 && !existingKeys.has(key)) {
-            db.ref("accounts").push({
-              username: p[0], password: p[1], email: p[2], emailPass: p[3], copied: false
-            });
-            addedCount++;
-          }
-        });
-        alert(`✅ Đã nhập từ TXT thành công!\nTổng số dòng đã thêm: ${addedCount}`);
-        filterCopied = false;
-        setTimeout(() => {
-          renderAccounts();
-          updateStats();
-        }, 1000);
-      });
-    };
-    r.readAsText(f);
-  });
-
-  function renderAccounts() {
-    const unused = Object.entries(accounts).filter(([_, acc]) => !acc.copied);
-    const random = unused[Math.floor(Math.random() * unused.length)];
-    if (!random) return;
-    const acc = random[1];
-    document.getElementById("lastUsername").textContent = acc.username;
-    document.getElementById("lastPassword").textContent = acc.password;
-    document.getElementById("lastEmail").textContent = acc.email;
-    document.getElementById("lastEmailPass").textContent = acc.emailPass;
-  }
-
-  function exportClipboardContent() {
-  const content = document.getElementById("pasteArea").value;
-  const blob = new Blob([content], { type: "text/plain" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "clipboard_export.txt";
-  a.click();
-}
-
-function updateStats() {
-    const all = Object.values(accounts);
-    const used = all.filter(a => a.copied).length;
-    const unused = all.length - used;
-    console.log(`📊 Đã dùng: ${used}, Chưa dùng: ${unused}`);
-  }
-
-  db.ref("accounts").on("value", snap => {
-    accounts = snap.val() || {};
-    if (!filterCopied) renderAccounts();
-    updateStats();
-  });
-  fetchGlobalIdApple();
-
-  function pasteFromClipboard() {
-    document.getElementById("clipboardResult").innerText = "";
-    navigator.clipboard.readText().then(text => {
-      const lines = text.trim().split("\n");
-      document.getElementById("pasteArea").value = text;
-      db.ref("accounts").once("value", snap => {
-        const existing = snap.val() || {};
-        const existingKeys = new Set(Object.values(existing).map(acc => `${acc.username}|${acc.password}|${acc.email}`));
-        let addedCount = 0;
-        lines.forEach(line => {
-          const p = parseLine(line);
-          const key = `${p[0]}|${p[1]}|${p[2]}`;
-          if (p.length >= 4 && !existingKeys.has(key)) {
-            db.ref("accounts").push({
-              username: p[0], password: p[1], email: p[2], emailPass: p[3], copied: false
-            });
-            addedCount++;
-          }
-        });
-        document.getElementById("clipboardResult").innerText = `✅ Đã dán từ Clipboard thành công!
-Tổng số dòng đã thêm: ${addedCount}`;
-        filterCopied = false;
-        setTimeout(() => {
-          renderAccounts();
-          updateStats();
-        }, 1000);
-      });
-    });
-  }
-  </script>
-<!-- Hiển thị thống kê ngay trên trang -->
+  <!-- Thống kê -->
   <div style="margin-top:20px">
     <strong>📊 Thống kê:</strong>
     <span id="usedCount">Đã dùng: 0</span> | <span id="unusedCount">Chưa dùng: 0</span>
   </div>
-
-  <script>
-    function updateStats() {
-      const all = Object.values(accounts);
-      const used = all.filter(a => a.copied).length;
-      const unused = all.length - used;
-      document.getElementById("usedCount").textContent = `Đã dùng: ${used}`;
-      document.getElementById("unusedCount").textContent = `Chưa dùng: ${unused}`;
-      console.log(`📊 Đã dùng: ${used}, Chưa dùng: ${unused}`);
+<script>
+  function deleteAllAccounts() {
+    if (confirm("Bạn có chắc chắn muốn xoá toàn bộ dữ liệu tài khoản?")) {
+      db.ref("accounts").remove().then(() => {
+        accounts = {};
+        document.getElementById("accountList").innerHTML = "";
+        document.getElementById("lastUsername").textContent = "-";
+        document.getElementById("lastPassword").textContent = "-";
+        document.getElementById("lastEmail").textContent = "-";
+        document.getElementById("lastEmailPass").textContent = "-";
+        document.getElementById("usedCount").textContent = "Đã dùng: 0";
+        document.getElementById("unusedCount").textContent = "Chưa dùng: 0";
+        document.getElementById("accountTotal").textContent = "0";
+        document.getElementById("accountCopied").textContent = "0";
+        updateStats();
+        alert("🗑️ Đã xoá toàn bộ dữ liệu tài khoản");
+      }).catch((err) => {
+        alert("❌ Lỗi khi xoá dữ liệu: " + err.message);
+      });
     }
-  </script>
+  }
+</script>
 </body>
 </html>
