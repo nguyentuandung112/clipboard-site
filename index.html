@@ -68,7 +68,7 @@ function deleteAllAccounts() {
     db.ref("accounts").remove().then(() => {
       Object.keys(accounts).forEach(k => delete accounts[k]);
       updateStats();
-      document.getElementById("accountList").innerHTML = "";
+      document.getElementById("accountList").innerHTML = "<div class='stat'>Không còn tài khoản chưa sử dụng</div>";
       alert("🗑️ Đã xoá toàn bộ dữ liệu tài khoản");
     }).catch((err) => {
       alert("❌ Lỗi khi xoá dữ liệu: " + err.message);
