@@ -234,8 +234,14 @@
           const row = document.createElement("div");
           row.className = "field";
 
-          const span = document.createElement("span");
-          span.textContent = field.value;
+          const label = document.createElement("span");
+          label.textContent = field.label;
+          label.style.fontWeight = "bold";
+          label.style.flex = "1";
+
+          const valueSpan = document.createElement("span");
+          valueSpan.textContent = field.value;
+          valueSpan.style.flex = "2";
 
           const copyBtn = document.createElement("button");
           copyBtn.textContent = "Copy";
@@ -245,8 +251,8 @@
             });
           };
 
-          row.innerHTML = `<strong>${field.label}:</strong> `;
-          row.appendChild(span);
+          row.appendChild(label);
+          row.appendChild(valueSpan);
           row.appendChild(copyBtn);
           box.appendChild(row);
         });
