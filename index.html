@@ -71,7 +71,7 @@ function deleteAllAccounts() {
       updateStats();
       updateLastDisplay();
       alert("🗑️ Đã xoá toàn bộ dữ liệu tài khoản");
-}.catch((err) => {
+    }).catch((err) => {
       alert("❌ Lỗi khi xoá dữ liệu: " + err.message);
     });
   }
