@@ -201,7 +201,6 @@ function deleteAllAccounts() {
   };
   r.readAsText(f);
 });
-      };
     db.ref("accounts").on("value", snap => {
       const data = snap.val() || {};
       Object.keys(accounts).forEach(k => delete accounts[k]);
